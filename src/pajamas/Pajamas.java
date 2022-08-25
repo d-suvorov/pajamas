@@ -8,6 +8,21 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public /* namespace */ class Pajamas {
+  public static Ok ok() { return new Ok(); }
+  public static End end() { return new End(); }
+  public static Like like(Predicate<Character> like) { return new Like(like); }
+  public static OneOf oneOf(String set) { return new OneOf(set); }
+
+  public static <R> Seq<R> seq(List<? extends Parser<R>> ps) { return new Seq<>(ps); }
+
+  public static <R> Or<R> or(Parser<R> left, Parser<R> right) { return new Or<>(left, right); }
+  public static <R> Star<R> star(Parser<R> p) { return new Star<>(p); }
+  public static <R> Plus<R> plus(Parser<R> p) { return new Plus<>(p); }
+  public static <R> Option<R> option(Parser<R> p) { return new Option<>(p); }
+
+  public static Char chr(char c) { return new Char(c); }
+  public static Str str(String s) { return new Str(s); }
+
   public record State(String input, int offset) {
     public boolean eof() {
       return offset == input.length();
@@ -117,7 +132,7 @@ public /* namespace */ class Pajamas {
 
     @Override
     public Optional<ParseResult<Character>> run(State state) {
-      return new Like(next -> set.indexOf(next) != -1).run(state);
+      return like(next -> set.indexOf(next) != -1).run(state);
     }
   }
 
@@ -146,7 +161,7 @@ public /* namespace */ class Pajamas {
 
     @Override
     public Optional<ParseResult<List<R>>> run(State state) {
-      return new Or<>(new Plus<>(p), Parser.ret(Collections.emptyList())).run(state);
+      return or(plus(p), Parser.ret(Collections.emptyList())).run(state);
     }
   }
 
@@ -160,7 +175,7 @@ public /* namespace */ class Pajamas {
     @Override
     public Optional<ParseResult<List<R>>> run(State state) {
       Function<R, Parser<List<R>>> f = (R r1) -> (State s2) -> {
-        var r2 = new Star<>(p).run(s2).orElseThrow();
+        var r2 = star(p).run(s2).orElseThrow();
         return Optional.of(ParseResult.of(r2.state, cons(r1, r2.result)));
       };
       return Parser.chain(p, f).run(state);
@@ -185,7 +200,7 @@ public /* namespace */ class Pajamas {
     public Optional<ParseResult<Optional<R>>> run(State state) {
       Parser<Optional<R>> one = Parser.chain(p, r -> Parser.ret(Optional.of(r)));
       Parser<Optional<R>> zero = Parser.ret(Optional.empty());
-      var res = new Or<>(one, zero).run(state);
+      var res = or(one, zero).run(state);
       if (res.isEmpty()) throw new AssertionError("Option should never fail");
       return res;
     }
@@ -200,7 +215,7 @@ public /* namespace */ class Pajamas {
 
     @Override
     public Optional<ParseResult<Character>> run(State state) {
-      return new Like(next -> next == like).run(state);
+      return like(next -> next == like).run(state);
     }
   }
 
@@ -214,9 +229,9 @@ public /* namespace */ class Pajamas {
     @Override
     public Optional<ParseResult<String>> run(State state) {
       List<Char> parsers = str.chars()
-                              .mapToObj(c -> new Char((char) c))
+                              .mapToObj(c -> chr((char) c))
                               .toList();
-      return new Seq<>(parsers).run(state).map(r -> {
+      return seq(parsers).run(state).map(r -> {
         var sb = new StringBuilder();
         r.result.forEach(sb::append);
         return ParseResult.of(r.state, sb.toString());

@@ -2,55 +2,56 @@ package pajamas;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import pajamas.Pajamas.*;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static pajamas.Pajamas.*;
+
 class PajamasTest {
   @Test
-  void ok() {
+  void testOk() {
     var input = "abacaba";
-    mustParse(input, new Ok(), Top.T, input);
+    mustParse(input, ok(), Top.T, input);
   }
 
   @Test
-  void eof() {
-    mustParse("", new End(), Top.T, "");
+  void matchEnd() {
+    mustParse("", end(), Top.T, "");
   }
 
   @Test
-  void notEof() {
-    mustFail("abacaba", new End());
+  void notEnd() {
+    mustFail("abacaba", end());
   }
 
   @Test
   public void charMatch() {
     var input = "abacaba";
-    mustParse(input, new Char('a'), input.charAt(0), input.substring(1));
+    mustParse(input, chr('a'), input.charAt(0), input.substring(1));
   }
 
   @Test
   public void charNotMatch() {
-    mustFail("abacaba", new Char('b'));
+    mustFail("abacaba", chr('b'));
   }
 
   @Test
   public void charEmpty() {
-    mustFail("", new Char('a'));
+    mustFail("", chr('a'));
   }
 
   @Test
   void oneOfMatch() {
     var input = "abacaba";
-    mustParse(input, new OneOf("lamp"), 'a', input.substring(1));
+    mustParse(input, oneOf("lamp"), 'a', input.substring(1));
   }
 
   @Test
   void oneOfNotMatch() {
     var input = "abacaba";
-    mustFail(input, new OneOf("xyz"));
+    mustFail(input, oneOf("xyz"));
   }
 
   @Test
@@ -59,17 +60,17 @@ class PajamasTest {
     int pivot = 3;
     var prefix = input.substring(0, pivot);
     var suffix = input.substring(pivot);
-    mustParse(input, new Str(prefix), prefix, suffix);
+    mustParse(input, str(prefix), prefix, suffix);
   }
 
   @Test
   void stringNotMatch() {
-    mustFail("abacaba", new Str("abc"));
+    mustFail("abacaba", str("abc"));
   }
 
   @Test
   void stringEof() {
-    mustFail("aba", new Str("abac"));
+    mustFail("aba", str("abac"));
   }
 
   @Test
@@ -78,43 +79,43 @@ class PajamasTest {
     var pivot = 3;
     var prefix = input.substring(0, pivot);
     var suffix = input.substring(pivot);
-    mustParse(input, new Option<>(new Str(prefix)), Optional.of(prefix), suffix);
+    mustParse(input, option(str(prefix)), Optional.of(prefix), suffix);
   }
 
   @Test
   void optionMatchEmpty() {
     var input = "abacaba";
-    mustParse(input, new Option<>(new Str("aca")), Optional.empty(), input);
+    mustParse(input, option(str("aca")), Optional.empty(), input);
   }
 
   @Test
   void starMatch() {
     var input = "aaab";
-    mustParse(input, new Star<>(new Char('a')), List.of('a', 'a', 'a'), input.substring(3));
+    mustParse(input, star(chr('a')), List.of('a', 'a', 'a'), input.substring(3));
   }
 
   @Test
   void starEmpty() {
     var input = "aaab";
-    mustParse(input, new Star<>(new Char('b')), Collections.emptyList(), input);
+    mustParse(input, star(chr('b')), Collections.emptyList(), input);
   }
 
   @Test
   void plusMatchOne() {
     var input = "abbb";
-    mustParse(input, new Plus<>(new Char('a')), List.of('a'), input.substring(1));
+    mustParse(input, plus(chr('a')), List.of('a'), input.substring(1));
   }
 
   @Test
   void plusMatchMore() {
     var input = "aaab";
-    mustParse(input, new Plus<>(new Char('a')), List.of('a', 'a', 'a'), input.substring(3));
+    mustParse(input, plus(chr('a')), List.of('a', 'a', 'a'), input.substring(3));
   }
 
   @Test
   void plusNotMatch() {
     var input = "aaab";
-    mustFail(input, new Plus<>(new Char('b')));
+    mustFail(input, plus(chr('b')));
   }
 
   private static <R> void mustParse(String input, Parser<R> parser,
